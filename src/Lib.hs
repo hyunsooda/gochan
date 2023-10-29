@@ -32,7 +32,6 @@ data ErrChan
 instance Show a => Show (HChan a) where
   show _ = ""
 
--- instance Show a => Show (Impl (HChan a)) where
 instance Show a => Show (Impl (HChan a)) where
   show _ = ""
 
