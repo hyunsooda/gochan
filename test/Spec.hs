@@ -3,6 +3,7 @@ import Test.Tasty.Hspec
 import Test.Hspec
 
 import Control.Monad (forM_, forM)
+import Data.List (intercalate)
 import Data.Either (fromRight)
 import System.IO (hSetBuffering, stdout, BufferMode(..))
 import Control.Concurrent (threadDelay)
@@ -29,6 +30,11 @@ spec_test =
           oneSec = 1000000
       timerFinished <- race blockingTest timer
       timerFinished `shouldBe` Right ()
+
+    it "channel range test" $ do
+      let dummyStr = "dummy"
+      output <- rangeTest dummyStr
+      output `shouldBe` (intercalate dummyStr dummyInputs)
 
     it "channel full test" $ do
       chanFullTest
@@ -103,3 +109,12 @@ chanSizeTest = do
   cs <- chanSize hchan
   cs `shouldBe` 2
   pure ()
+
+rangeTest :: String -> IO String
+rangeTest dummyStr = do
+  hchan <- initChan 5
+  "data1" --> hchan
+  "data2" --> hchan
+  "data3" --> hchan
+  output <- range hchan (\x -> x)
+  pure $ intercalate dummyStr (fromRight [] output)

@@ -8,11 +8,12 @@ module Lib
     , initChan
     , (-->)
     , (<--)
+    , range
     , close
     , chanSize
     ) where
 
-import Data.Kind
+import Data.Kind (Type)
 import Control.Concurrent
 import Control.Monad (when)
 import Data.IORef
@@ -42,6 +43,7 @@ class Show a => Channable a where
   -- blocking APIs
   (-->) :: ChanTyp a -> Impl a -> IO (Either ErrChan ()) -- send
   (<--) :: Impl a -> IO (Either ErrChan (ChanTyp a))     -- receive
+  range :: Impl a -> (ChanTyp a -> b) -> IO (Either ErrChan [b])
 
   -- non-blocking APIs
   close :: Impl a -> IO ()
@@ -56,27 +58,27 @@ instance Show a => Channable (HChan a) where
     isClosed <- readMVar (closed hchan)
     if isClosed then closeErr
                 else update
-      where
-        closeErr = pure . Left $ ChanClosed
-        fullErr = pure . Left $ ChanFull
-        success = pure (Right ())
-        update = do
-          cs <- chanSize implChan
-          if cs == capacity hchan then fullErr
-          else do
-            isEmpty <- readMVar (empty hchan)
-            if isEmpty then do
-              writeChan (ch hchan) val
-              swapMVar (empty hchan) False >> success
-            else
-              modifyIORef' (queue hchan) (flip (++) [val]) >> success
+    where
+      closeErr = pure . Left $ ChanClosed
+      fullErr = pure . Left $ ChanFull
+      success = pure (Right ())
+      update = do
+        cs <- chanSize implChan
+        if cs == capacity hchan then fullErr
+        else do
+          isEmpty <- readMVar (empty hchan)
+          if isEmpty then do
+            writeChan (ch hchan) val
+            swapMVar (empty hchan) False >> success
+          else
+            modifyIORef' (queue hchan) (flip (++) [val]) >> success
 
   (<--) implChan@(ImplChan hchan) = do
     isClosed <- readMVar (closed hchan)
-    if isClosed then err
+    if isClosed then closeErr
                 else readCell
     where
-      err = pure . Left $ ChanClosed
+      closeErr = pure . Left $ ChanClosed
       readCell = do
         val <- readChan (ch hchan)
         cs <- (flip (-) 1) <$> chanSize implChan
@@ -84,12 +86,30 @@ instance Show a => Channable (HChan a) where
         when (cs > 0) pushChan
         pure . Right $ val
 
-        where
-          makeChanEmpty = swapMVar (empty hchan) True >> pure ()
-          pushChan = do
-            q <- readIORef (queue hchan)
-            writeIORef (queue hchan) (drop 1 q)
-            writeChan (ch hchan) (head q)
+      makeChanEmpty = swapMVar (empty hchan) True >> pure ()
+      pushChan = do
+        q <- readIORef (queue hchan)
+        writeIORef (queue hchan) (drop 1 q)
+        writeChan (ch hchan) (head q)
+
+  range implChan@(ImplChan hchan) iter = do
+    isClosed <- readMVar (closed hchan)
+    if isClosed then closeErr
+    else do
+      output <- goRange []
+      pure . Right $ output
+
+    where
+      closeErr = pure . Left $ ChanClosed
+      goRange acc = do
+        r <- (<--) implChan
+        case r of
+          Left _  -> pure acc
+          Right d -> do
+            cs <- chanSize implChan
+            let appended = acc ++ [iter d]
+            if cs == 0 then pure appended
+                       else goRange appended
 
   chanSize (ImplChan hchan) = do
     isEmpty <- readMVar (empty hchan)
