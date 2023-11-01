@@ -25,6 +25,10 @@ source-repository head
 
 library
   exposed-modules:
+      Gchan.Gchan
+      Gchan.GchanBidirectional
+      Gchan.GchanReceiveOnly
+      Gchan.GchanSendOnly
       Lib
   other-modules:
       Paths_gochan
@@ -41,6 +45,8 @@ test-suite gochan-test
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   other-modules:
+      GchanSpec
+      TypeWrapSpec
       Paths_gochan
   autogen-modules:
       Paths_gochan
