@@ -5,7 +5,6 @@ module Gchan.GchanReceiveOnly
   ( ReceivableGchan (..)
   , ReceivableImpl (..)
   , ReceivableImplT
-  , initRG
   ) where
 
 import Data.Kind (Type)
@@ -30,8 +29,3 @@ instance Show a => ReceivableGchan (ReceiveGchan (Gchan a)) where
   (<--) (ReceivableImplChan (ReceiveGchan gchan)) = receiveG gchan
 
   chanSize (ReceivableImplChan (ReceiveGchan gchan)) = chanSizeG gchan
-
-initRG :: Int -> IO (ReceivableImplT a)
-initRG cap = do
-  gchan <- initGchan cap
-  pure . ReceivableImplChan $ ReceiveGchan gchan

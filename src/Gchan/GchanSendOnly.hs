@@ -5,7 +5,6 @@ module Gchan.GchanSendOnly
   ( SendableGchan (..)
   , SendableImpl (..)
   , SendableImplT
-  , initSG
   ) where
 
 import Data.Kind (Type)
@@ -32,8 +31,3 @@ instance Show a => SendableGchan (SendGchan (Gchan a)) where
 
   close (SendableImplChan (SendGchan gchan)) = closeG gchan
   chanSize (SendableImplChan (SendGchan gchan)) = chanSizeG gchan
-
-initSG :: Int -> IO (SendableImplT a)
-initSG cap = do
-  gchan <- initGchan cap
-  pure . SendableImplChan $ SendGchan gchan
