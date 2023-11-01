@@ -46,7 +46,7 @@ instance Show a => BidirectionalGchan (SendReceiveGchan (Gchan a)) where
 
   wrap2SendOnly (BidirectImplChan (SendReceiveGchan gchan)) =
     pure . SG.SendableImplChan $ SendGchan gchan
-  
+
   wrap2ReceiveOnly (BidirectImplChan (SendReceiveGchan gchan)) =
     pure . RG.ReceivableImplChan $ ReceiveGchan gchan
 
