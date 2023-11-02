@@ -4,6 +4,6 @@ gochan is a library that offers thread communication methods, drawing significan
 
 ### Features
 - Strong typing at compile time
-    - Recevable channel: Receive opration is only available.
-    - Sendable channel: Send opration is only available.
-    - Bidirectional channel: Both operations are available.
+    - Recevable channel (`<-chan`): Receive opration is only available.
+    - Sendable channel  (`chan<-`): Send opration is only available.
+    - Bidirectional channel (`chan`): Both operations are available.
